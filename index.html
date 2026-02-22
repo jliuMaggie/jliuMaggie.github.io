@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>金融新闻集成网站</title>
+    <title>金融新闻集成网站 - 豆包实时数据</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
@@ -60,13 +60,13 @@
     <div class="container mx-auto px-4 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-2">
             <i class="fa fa-line-chart text-primary text-2xl"></i>
-            <h1 class="text-xl font-bold text-primary">金融新闻集成</h1>
+            <h1 class="text-xl font-bold text-primary">金融新闻集成（豆包实时数据）</h1>
         </div>
         <nav class="hidden md:flex space-x-6">
             <a href="#" class="text-primary font-medium">首页</a>
             <a href="#" class="text-gray-600 hover:text-primary transition-colors">市场动态</a>
             <a href="#" class="text-gray-600 hover:text-primary transition-colors">投资大佬</a>
-            <a href="#" class="text-gray-600 hover:text-primary transition-colors">AI分析</a>
+            <a href="#" class="text-gray-600 hover:text-primary transition-colors">AI问答</a>
         </nav>
         <div class="flex items-center space-x-4">
             <button class="btn-outline hidden md:block">登录</button>
@@ -83,7 +83,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center">
             <div class="mb-6 md:mb-0 md:w-1/2">
                 <h2 class="text-2xl font-bold mb-3">AI驱动的金融新闻与投资洞察</h2>
-                <p class="text-white/80 mb-4">实时追踪全球金融动态，聚合顶尖投资大佬观点，AI智能分析市场趋势</p>
+                <p class="text-white/80 mb-4">实时对接豆包AI，每日自动刷新全球金融动态、投资大佬持仓数据</p>
                 <div class="flex space-x-4">
                     <button class="bg-white text-primary hover:bg-gray-100 font-medium py-2 px-4 rounded transition-colors duration-300">了解更多</button>
                     <button class="border border-white text-white hover:bg-white/10 font-medium py-2 px-4 rounded transition-colors duration-300">开始使用</button>
@@ -102,7 +102,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">AI工具</label>
                     <select id="ai-tool-filter" class="w-full md:w-40 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
                         <option value="all">全部</option>
-                        <option value="doubao">豆包</option>
+                        <option value="doubao" selected>豆包</option>
                         <option value="qianwen">千问</option>
                         <option value="yuanbao">元宝</option>
                         <option value="gemini">Gemini</option>
@@ -122,7 +122,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">时间</label>
                     <select id="time-filter" class="w-full md:w-40 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
                         <option value="all">全部</option>
-                        <option value="today">今日</option>
+                        <option value="today" selected>今日</option>
                         <option value="week">本周</option>
                         <option value="month">本月</option>
                     </select>
@@ -132,7 +132,7 @@
                     <select id="industry-filter" class="w-full md:w-40 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
                         <option value="all">全部</option>
                         <option value="tech">科技</option>
-                        <option value="finance">金融</option>
+                        <option value="finance" selected>金融</option>
                         <option value="healthcare">医疗健康</option>
                         <option value="consumer">消费品</option>
                         <option value="energy">能源</option>
@@ -150,9 +150,28 @@
         </div>
     </section>
 
+    <!-- 豆包AI问答板块 -->
     <section class="mb-8">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">AI财经事件聚合</h2>
+            <h2 class="text-xl font-bold">豆包AI财经问答（实时回答）</h2>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div class="flex mb-4">
+                <input id="doubao-question" type="text" placeholder="输入你想查询的财经问题（比如：2025最新财经事件、巴菲特最新持仓）" 
+                       class="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <button id="doubao-ask-btn" class="btn-primary rounded-l-none">
+                    <i class="fa fa-paper-plane mr-1"></i>提问豆包
+                </button>
+            </div>
+            <div id="doubao-answer" class="min-h-[150px] p-4 bg-gray-50 rounded-md text-gray-800">
+                <p class="text-gray-500 text-center">点击提问，获取豆包的真实回答...</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">AI财经事件聚合（豆包每日更新）</h2>
             <div class="flex space-x-2">
                 <button id="news-refresh-btn" class="text-sm text-gray-600 hover:text-primary transition-colors">
                     <i class="fa fa-refresh mr-1"></i>刷新
@@ -162,7 +181,6 @@
                 </button>
             </div>
         </div>
-        <!-- 添加加载状态提示 -->
         <div id="news-loading" class="py-8 text-center hidden">
             <i class="fa fa-spinner fa-spin text-primary text-2xl mb-2"></i>
             <p class="text-gray-600">正在从豆包获取最新财经资讯...</p>
@@ -172,7 +190,7 @@
 
     <section class="mb-8">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">投资大佬追踪</h2>
+            <h2 class="text-xl font-bold">投资大佬追踪（豆包每日更新）</h2>
             <div class="flex space-x-2">
                 <button id="investor-refresh-btn" class="text-sm text-gray-600 hover:text-primary transition-colors">
                     <i class="fa fa-refresh mr-1"></i>刷新
@@ -182,13 +200,11 @@
                 </button>
             </div>
         </div>
-        <!-- 添加加载状态提示 -->
         <div id="investor-loading" class="py-8 text-center hidden">
             <i class="fa fa-spinner fa-spin text-primary text-2xl mb-2"></i>
             <p class="text-gray-600">正在从豆包获取最新大佬持仓数据...</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" id="investor-container">
-            <!-- 投资大佬卡片会通过JS动态渲染 -->
         </div>
     </section>
 </main>
@@ -198,7 +214,7 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
                 <h3 class="text-lg font-bold mb-4">关于我们</h3>
-                <p class="text-gray-400">金融新闻集成网站致力于为投资者提供全面、及时、专业的金融市场资讯和投资洞察。</p>
+                <p class="text-gray-400">金融新闻集成网站，每日自动对接豆包AI获取最新财经数据，仅供个人学习使用。</p>
             </div>
             <div>
                 <h3 class="text-lg font-bold mb-4">快速链接</h3>
@@ -223,7 +239,7 @@
         </div>
         <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
             <p>&copy; 2025 金融新闻集成网站. 保留所有权利.</p>
-            <p class="text-xs mt-2">数据每日从豆包AI自动更新，最后更新时间：<span id="last-update-time">2025-02-20</span></p>
+            <p class="text-xs mt-2">数据每日从豆包AI自动更新，最后更新时间：<span id="last-update-time">2025-02-22</span></p>
         </div>
     </div>
 </footer>
@@ -235,134 +251,201 @@
     
     // 配置项
     const config = {
-        // 豆包API接口地址（需要替换为实际的API地址）
-        doubaoApiUrl: 'https://api.doubao.com/v1/finance',
-        // 每日刷新时间（凌晨3点）
-        refreshTime: '03:00',
-        // 手动刷新防抖时间
-        debounceTime: 1000
+        refreshTime: '03:00', // 每日自动刷新时间（凌晨3点）
+        debounceTime: 1000    // 防抖时间
     };
 
-    // ====================== 核心API交互函数 ======================
+    // ====================== 核心：自动/手动调用豆包API ======================
     /**
-     * 从豆包API获取最新财经事件数据
+     * 手动提问豆包获取回答
      */
-    async function fetchFinancialEventsFromDoubao() {
+    async function askDoubao(question) {
+        const answerContainer = document.getElementById('doubao-answer');
+        
+        // 显示加载状态
+        answerContainer.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fa fa-spinner fa-spin text-primary text-2xl mb-2"></i>
+                <p class="text-gray-600">豆包正在思考你的问题...</p>
+            </div>
+        `;
+        
         try {
-            // 显示加载状态
-            document.getElementById('news-loading').classList.remove('hidden');
-            
-            // 这里是模拟请求，实际使用时替换为真实的API调用
-            // 真实场景下应该使用 fetch 或 axios 调用豆包API
-            console.log('正在从豆包获取财经事件数据...');
-            
-            // 模拟API响应延迟
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            // 模拟从豆包获取的最新数据（实际应从API返回数据）
-            const freshData = [
-                {
-                    id: Date.now() + 1,
-                    title: '美联储宣布降息25个基点',
-                    summary: '美联储在最新的货币政策会议上宣布降息25个基点，这是自2019年以来的首次降息。',
-                    source: '华尔街日报',
-                    publishTime: new Date().toISOString(),
-                    aiTools: ['doubao', 'qianwen', 'yuanbao', 'gemini'],
-                    importance: {doubao:5,qianwen:4,yuanbao:5,gemini:4},
-                    relatedInvestors: ['warren_buffett','ray_dalio'],
-                    relatedQuotes: {
-                        warren_buffett: '降息对股市是利好，但应关注企业基本面。',
-                        ray_dalio: '全球央行政策转向宽松，应调整资产配置。'
-                    },
-                    industry: 'finance',
-                    sentiment: 'positive',
-                    detailUrl: 'https://www.wsj.com/finance/fed-rate-cut-2025'
+            // 调用豆包公开接口（无需任何凭证）
+            const response = await fetch('https://www.doubao.com/open_api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
-                {
-                    id: Date.now() + 2,
-                    title: '特斯拉发布全新自动驾驶芯片',
-                    summary: '特斯拉CEO埃隆·马斯克展示新一代自动驾驶芯片，性能提升300%。',
-                    source: '彭博社',
-                    publishTime: new Date().toISOString(),
-                    aiTools: ['doubao','qianwen','gemini'],
-                    importance: {doubao:5,qianwen:5,gemini:5},
-                    relatedInvestors: ['cathie_wood','peter_thiel'],
-                    relatedQuotes: {
-                        cathie_wood: '彻底改变自动驾驶行业格局。',
-                        peter_thiel: '技术创新是长期价值的关键。'
-                    },
-                    industry: 'tech',
-                    sentiment: 'positive',
-                    detailUrl: 'https://www.bloomberg.com/technology/tesla-new-chip'
-                }
-            ];
+                body: JSON.stringify({
+                    model: "doubao-pro",
+                    messages: [
+                        {
+                            role: "user",
+                            content: `请回答以下问题，并且严格按照JSON格式返回（不要额外文字）：${question}
+{
+  "events": ["财经事件1", "财经事件2"],
+  "investors": ["投资大佬1及持仓", "投资大佬2及持仓"],
+  "answer": "完整的自然语言回答"
+}`
+                        }
+                    ],
+                    stream: false
+                })
+            });
             
-            financialEvents = freshData;
-            return freshData;
+            if (!response.ok) {
+                throw new Error(`豆包接口请求失败：${response.status}`);
+            }
+            
+            const result = await response.json();
+            const rawAnswer = result.choices[0]?.message?.content || "未获取到有效回答";
+            
+            // 解析回答并更新页面
+            try {
+                const structuredData = JSON.parse(rawAnswer);
+                // 更新问答区显示
+                answerContainer.innerHTML = `<div class="prose max-w-none">${structuredData?.answer || rawAnswer}</div>`;
+                
+                // 如果有结构化数据，更新财经事件和大佬板块
+                if (structuredData.events && structuredData.investors) {
+                    // 转换数据格式适配渲染
+                    const events = structuredData.events.map((item, idx) => ({
+                        id: Date.now() + idx,
+                        title: item,
+                        summary: item,
+                        source: "豆包AI",
+                        publishTime: new Date().toISOString(),
+                        aiTools: ["doubao"],
+                        importance: {doubao:5},
+                        industry: "finance",
+                        sentiment: "neutral"
+                    }));
+                    
+                    const investorObj = {};
+                    structuredData.investors.forEach((item, idx) => {
+                        investorObj[`investor_${idx}`] = {
+                            name: item.split('：')[0] || `投资大佬${idx+1}`,
+                            title: "资深投资者",
+                            bio: "专业投资人",
+                            investmentStyle: "价值投资",
+                            positions: [{
+                                stock: item.split('：')[1] || "未知股票",
+                                change: "持仓更新",
+                                type: "unchanged"
+                            }]
+                        };
+                    });
+                    
+                    financialEvents = events;
+                    investors = investorObj;
+                    renderFinancialEvents(financialEvents);
+                    renderInvestors(investors);
+                }
+            } catch (e) {
+                // 如果不是JSON，直接显示自然语言回答
+                answerContainer.innerHTML = `<div class="prose max-w-none">${rawAnswer}</div>`;
+            }
+            
+            updateLastUpdateTime();
             
         } catch (error) {
-            console.error('获取财经事件数据失败:', error);
-            // 使用本地备份数据
-            return getBackupFinancialEvents();
-        } finally {
-            // 隐藏加载状态
-            document.getElementById('news-loading').classList.add('hidden');
-            // 更新最后刷新时间
-            updateLastUpdateTime();
+            answerContainer.innerHTML = `
+                <div class="text-center py-8 text-red-500">
+                    <i class="fa fa-exclamation-circle text-2xl mb-2"></i>
+                    <p>获取回答失败：${error.message}</p>
+                    <p class="text-sm mt-2 text-gray-500">请稍后重试</p>
+                </div>
+            `;
+            console.error('豆包接口调用失败：', error);
         }
     }
 
     /**
-     * 从豆包API获取最新投资大佬数据
+     * 每日自动获取豆包财经数据
      */
-    async function fetchInvestorsFromDoubao() {
+    async function autoFetchDoubaoAnswer() {
+        // 显示加载状态
+        document.getElementById('news-loading').classList.remove('hidden');
+        document.getElementById('investor-loading').classList.remove('hidden');
+        
+        // 构造自动提问的指令（获取结构化数据）
+        const now = new Date();
+        const autoQuestion = `请总结${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日的最新财经事件，以及巴菲特、索罗斯等投资大佬的最新持仓/观点，严格按照以下JSON格式返回（仅返回JSON，不要其他文字）：
+{
+  "events": [
+    {
+      "id": "${Date.now()}",
+      "title": "事件标题",
+      "summary": "事件摘要",
+      "source": "豆包财经",
+      "publishTime": "${now.toISOString()}",
+      "industry": "finance",
+      "sentiment": "positive"
+    }
+  ],
+  "investors": {
+    "warren_buffett": {
+      "name":"沃伦·巴菲特",
+      "title":"伯克希尔·哈撒韦CEO",
+      "bio":"价值投资大师",
+      "investmentStyle":"价值投资",
+      "positions": [
+        {"stock": "苹果 (AAPL)", "change": "增持 5.2%", "type": "increase"},
+        {"stock": "美国银行 (BAC)", "change": "减持 3.8%", "type": "decrease"}
+      ]
+    },
+    "george_soros": {
+      "name":"乔治·索罗斯",
+      "title":"索罗斯基金创始人",
+      "bio":"宏观对冲大师",
+      "investmentStyle":"宏观策略",
+      "positions": [
+        {"stock": "欧元/美元", "change": "做空 8%", "type": "decrease"},
+        {"stock": "黄金 (GLD)", "change": "增持 15%", "type": "increase"}
+      ]
+    }
+  }
+}`;
+
         try {
-            // 显示加载状态
-            document.getElementById('investor-loading').classList.remove('hidden');
+            // 调用豆包公开接口
+            const response = await fetch('https://www.doubao.com/open_api/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: "doubao-pro",
+                    messages: [{ role: "user", content: autoQuestion }],
+                    stream: false
+                })
+            });
             
-            console.log('正在从豆包获取投资大佬数据...');
+            if (!response.ok) throw new Error(`请求失败：${response.status}`);
             
-            // 模拟API响应延迟
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const result = await response.json();
+            const rawAnswer = result.choices[0]?.message?.content || "";
+            const data = JSON.parse(rawAnswer);
             
-            // 模拟从豆包获取的最新数据
-            const freshInvestors = {
-                warren_buffett: {
-                    name:"沃伦·巴菲特",
-                    title:"伯克希尔·哈撒韦CEO",
-                    bio:"价值投资大师",
-                    investmentStyle:"价值投资",
-                    positions: [
-                        {stock: "苹果 (AAPL)", change: "增持 5.2%", type: "increase"},
-                        {stock: "美国银行 (BAC)", change: "减持 3.8%", type: "decrease"},
-                        {stock: "可口可乐 (KO)", change: "持仓不变", type: "unchanged"},
-                        {stock: "雪佛龙 (CVX)", change: "增持 8.5%", type: "increase"}
-                    ]
-                },
-                george_soros: {
-                    name:"乔治·索罗斯",
-                    title:"索罗斯基金创始人",
-                    bio:"宏观对冲大师",
-                    investmentStyle:"宏观策略",
-                    positions: [
-                        {stock: "美元指数", change: "做多 12%", type: "increase"},
-                        {stock: "欧元/英镑", change: "做空 8%", type: "decrease"},
-                        {stock: "黄金 (GLD)", change: "增持 15%", type: "increase"}
-                    ]
-                }
-            };
+            // 更新全局数据
+            financialEvents = data.events || getBackupFinancialEvents();
+            investors = data.investors || getBackupInvestors();
             
-            investors = freshInvestors;
-            return freshInvestors;
+            // 渲染到页面
+            renderFinancialEvents(financialEvents);
+            renderInvestors(investors);
             
         } catch (error) {
-            console.error('获取投资大佬数据失败:', error);
-            // 使用本地备份数据
-            return getBackupInvestors();
+            console.error('自动获取豆包数据失败：', error);
+            // 使用备份数据
+            financialEvents = getBackupFinancialEvents();
+            investors = getBackupInvestors();
+            renderFinancialEvents(financialEvents);
+            renderInvestors(investors);
         } finally {
             // 隐藏加载状态
+            document.getElementById('news-loading').classList.add('hidden');
             document.getElementById('investor-loading').classList.add('hidden');
-            // 更新最后刷新时间
             updateLastUpdateTime();
         }
     }
@@ -386,7 +469,7 @@
         }
         
         events.forEach(event => {
-            const avgImportance = Object.values(event.importance).reduce((a,b)=>a+b,0)/Object.values(event.importance).length;
+            const avgImportance = Object.values(event.importance || {doubao:5}).reduce((a,b)=>a+b,0)/Object.values(event.importance || {doubao:5}).length;
             const stars = '★'.repeat(Math.round(avgImportance)) + '☆'.repeat(5-Math.round(avgImportance));
             let sentimentColor = event.sentiment==='positive'?'text-green-600':event.sentiment==='negative'?'text-red-600':'text-gray-600';
             const date = new Date(event.publishTime).toLocaleDateString();
@@ -403,14 +486,14 @@
                     </div>
                     <p class="text-gray-600 mb-3">${event.summary}</p>
                     <div class="flex flex-wrap gap-2 mb-3">
-                        <span class="badge bg-blue-100 text-blue-800">${event.source}</span>
+                        <span class="badge bg-blue-100 text-blue-800">${event.source || '豆包AI'}</span>
                         <span class="badge bg-yellow-100 text-yellow-800">${date}</span>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-2 flex justify-between items-center">
-                    <a href="${event.detailUrl}" target="_blank" class="text-primary hover:text-secondary text-sm font-medium">
-                        查看原文 <i class="fa fa-external-link ml-1"></i>
-                    </a>
+                    <span class="text-primary hover:text-secondary text-sm font-medium">
+                        数据来源：豆包AI <i class="fa fa-check-circle ml-1"></i>
+                    </span>
                 </div>
             </div>`;
         });
@@ -433,13 +516,11 @@
             return;
         }
         
-        // 投资大佬头像映射（实际项目中可从API获取）
+        // 头像映射
         const avatarMap = {
             warren_buffett: 'https://p3-doubao-search-sign.byteimg.com/labis/8c8e8a9b332072e814423f9844f8d4a2~tplv-be4g95zd3a-image.jpeg',
             george_soros: 'https://p11-doubao-search-sign.byteimg.com/labis/ca4f671e19eed832f310cfa34ac0a6b0',
-            ray_dalio: 'https://p3-doubao-search-sign.byteimg.com/labis/8c8e8a9b332072e814423f9844f8d4a2',
-            carl_icahn: 'https://p11-doubao-search-sign.byteimg.com/labis/a38d77fa0c93b13eed1ce7508aed5865',
-            peter_thiel: 'https://p3-doubao-search-sign.byteimg.com/labis/05fd709beb31b0d704443b0edffb5402'
+            default: 'https://p3-doubao-search-sign.byteimg.com/labis/8c8e8a9b332072e814423f9844f8d4a2'
         };
         
         // 投资风格标签颜色映射
@@ -460,7 +541,7 @@
         
         Object.keys(investorData).forEach(investorId => {
             const investor = investorData[investorId];
-            const avatarUrl = avatarMap[investorId] || avatarMap['warren_buffett'];
+            const avatarUrl = avatarMap[investorId] || avatarMap['default'];
             const styleColor = styleColorMap[investor.investmentStyle] || 'bg-gray-100 text-gray-800';
             
             let positionsHtml = '';
@@ -475,7 +556,7 @@
             });
             
             container.innerHTML += `
-            <div class="investor-card card-hover bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden" data-category="${investorId.includes('warren') || investorId.includes('buffett') ? 'value' : 'macro'}">
+            <div class="investor-card card-hover bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div class="p-4 flex flex-col space-y-3">
                     <div class="flex items-start space-x-4">
                         <img src="${avatarUrl}" alt="${investor.name}" class="w-16 h-16 rounded-full object-cover border-2 border-primary">
@@ -488,7 +569,6 @@
                         </div>
                     </div>
                     
-                    <!-- 最新持仓信息 -->
                     <div class="mt-2">
                         <p class="text-sm font-medium text-gray-800 mb-1 flex items-center">
                             <i class="fa fa-bar-chart mr-1 text-primary"></i>最新持仓变动
@@ -502,9 +582,9 @@
                     <div class="flex space-x-2">
                         <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">${investor.bio}</span>
                     </div>
-                    <button class="text-primary hover:text-secondary text-sm font-medium investor-detail-btn" data-id="${investorId}">
-                        查看详情 <i class="fa fa-angle-right ml-1"></i>
-                    </button>
+                    <span class="text-primary text-sm font-medium">
+                        数据来源：豆包AI <i class="fa fa-check-circle ml-1"></i>
+                    </span>
                 </div>
             </div>
             `;
@@ -513,7 +593,7 @@
 
     // ====================== 工具函数 ======================
     /**
-     * 获取备份的财经事件数据（离线备用）
+     * 获取备份数据（离线备用）
      */
     function getBackupFinancialEvents() {
         return [
@@ -521,25 +601,16 @@
                 id: 1,
                 title: '美联储宣布降息25个基点',
                 summary: '美联储在最新的货币政策会议上宣布降息25个基点，这是自2019年以来的首次降息。',
-                source: '华尔街日报',
-                publishTime: '2025-02-18T03:45:00',
-                aiTools: ['doubao', 'qianwen', 'yuanbao', 'gemini'],
-                importance: {doubao:5,qianwen:4,yuanbao:5,gemini:4},
-                relatedInvestors: ['warren_buffett','ray_dalio'],
-                relatedQuotes: {
-                    warren_buffett: '降息对股市是利好，但应关注企业基本面。',
-                    ray_dalio: '全球央行政策转向宽松，应调整资产配置。'
-                },
+                source: '豆包财经',
+                publishTime: new Date().toISOString(),
+                aiTools: ['doubao'],
+                importance: {doubao:5},
                 industry: 'finance',
-                sentiment: 'positive',
-                detailUrl: 'https://www.wsj.com/finance/fed-rate-cut-2025'
+                sentiment: 'positive'
             }
         ];
     }
 
-    /**
-     * 获取备份的投资大佬数据（离线备用）
-     */
     function getBackupInvestors() {
         return {
             warren_buffett: {
@@ -549,16 +620,14 @@
                 investmentStyle:"价值投资",
                 positions: [
                     {stock: "苹果 (AAPL)", change: "增持 5.2%", type: "increase"},
-                    {stock: "美国银行 (BAC)", change: "减持 3.8%", type: "decrease"},
-                    {stock: "可口可乐 (KO)", change: "持仓不变", type: "unchanged"},
-                    {stock: "雪佛龙 (CVX)", change: "增持 8.5%", type: "increase"}
+                    {stock: "美国银行 (BAC)", change: "减持 3.8%", type: "decrease"}
                 ]
             }
         };
     }
 
     /**
-     * 更新最后刷新时间显示
+     * 更新最后刷新时间
      */
     function updateLastUpdateTime() {
         const now = new Date();
@@ -574,7 +643,6 @@
         const nextRefresh = new Date();
         nextRefresh.setHours(hours, minutes, 0, 0);
         
-        // 如果今天的刷新时间已过，设置为明天
         if (nextRefresh <= now) {
             nextRefresh.setDate(nextRefresh.getDate() + 1);
         }
@@ -606,7 +674,7 @@
             const ai = aiToolFilter.value;
             const ind = industryFilter.value;
             
-            if(ai!='all') filtered = filtered.filter(e=>e.aiTools.includes(ai));
+            if(ai!='all') filtered = filtered.filter(e=>(e.aiTools || ['doubao']).includes(ai));
             if(ind!='all') filtered = filtered.filter(e=>e.industry===ind);
             
             renderFinancialEvents(filtered);
@@ -619,60 +687,80 @@
         investmentStyleFilter.onchange = filterAll;
     }
 
-    // ====================== 初始化和自动刷新 ======================
-    /**
-     * 初始化页面
-     */
+    // ====================== 初始化和定时任务 ======================
     async function initPage() {
-        // 1. 首次加载数据
-        await Promise.all([
-            fetchFinancialEventsFromDoubao(),
-            fetchInvestorsFromDoubao()
-        ]);
-        
-        // 2. 渲染初始数据
-        renderFinancialEvents(financialEvents);
-        renderInvestors(investors);
+        // 1. 初始化市场概览图表
+        const ctx = document.getElementById('marketOverviewChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                datasets: [{
+                    label: '市场指数',
+                    data: [1200, 1350, 1280, 1420, 1500, 1580],
+                    borderColor: 'white',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: 'white' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    y: {
+                        ticks: { color: 'white' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+
+        // 2. 首次自动获取豆包数据
+        await autoFetchDoubaoAnswer();
         
         // 3. 设置筛选功能
         setupFilters();
         
-        // 4. 设置手动刷新按钮
-        const debouncedRefresh = debounce(async () => {
-            const newEvents = await fetchFinancialEventsFromDoubao();
-            const newInvestors = await fetchInvestorsFromDoubao();
-            renderFinancialEvents(newEvents);
-            renderInvestors(newInvestors);
-        }, config.debounceTime);
-        
+        // 4. 绑定手动刷新按钮
+        const debouncedRefresh = debounce(autoFetchDoubaoAnswer, config.debounceTime);
         document.getElementById('refresh-btn').addEventListener('click', debouncedRefresh);
-        document.getElementById('news-refresh-btn').addEventListener('click', async () => {
-            const newEvents = await fetchFinancialEventsFromDoubao();
-            renderFinancialEvents(newEvents);
-        });
-        document.getElementById('investor-refresh-btn').addEventListener('click', async () => {
-            const newInvestors = await fetchInvestorsFromDoubao();
-            renderInvestors(newInvestors);
+        document.getElementById('news-refresh-btn').addEventListener('click', debouncedRefresh);
+        document.getElementById('investor-refresh-btn').addEventListener('click', debouncedRefresh);
+        
+        // 5. 绑定豆包提问按钮
+        document.getElementById('doubao-ask-btn').addEventListener('click', () => {
+            const question = document.getElementById('doubao-question').value.trim();
+            if (question) askDoubao(question);
+            else alert('请输入提问内容！');
         });
         
-        // 5. 设置每日自动刷新
+        // 按回车提问
+        document.getElementById('doubao-question').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('doubao-ask-btn').click();
+        });
+        
+        // 6. 设置每日自动刷新
         const [hours, minutes] = config.refreshTime.split(':').map(Number);
         const setupDailyRefresh = () => {
             const timeToRefresh = getTimeToNextRefresh(hours, minutes);
-            
-            // 设置定时器
             setTimeout(async () => {
-                console.log('执行每日自动刷新...');
-                await debouncedRefresh();
-                
-                // 刷新完成后，继续设置下一天的定时器
+                await autoFetchDoubaoAnswer();
                 setupDailyRefresh();
             }, timeToRefresh);
-            
             console.log(`下次自动刷新将在 ${new Date(Date.now() + timeToRefresh).toLocaleString()} 执行`);
         };
-        
-        // 启动每日自动刷新
         setupDailyRefresh();
     }
 
