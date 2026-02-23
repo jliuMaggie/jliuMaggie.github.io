@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>金融新闻集成网站 - 豆包实时数据</title>
-    <!-- 修复：替换为正确的Tailwind CSS CDN（CSS文件而非JS文件） -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
@@ -183,7 +182,7 @@
             </div>
         </div>
         <div id="news-loading" class="py-8 text-center hidden">
-            <i class="fa fa-spinner fa-spin text-primary text-2xl mb-2"></i>
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-2"></div>
             <p class="text-gray-600">正在从豆包获取最新财经资讯...</p>
         </div>
         <div class="grid grid-cols-1 gap-4" id="ai-news-container"></div>
@@ -246,6 +245,10 @@
 </footer>
 
 <script>
+    // ========== 关键配置：替换为你的豆包API密钥 ==========
+    const DOUBAO_API_KEY = "你的豆包API密钥"; // 需从豆包开发者平台申请
+    const DOUBAO_API_BASE_URL = "https://www.doubao.com/open_api/v1/chat/completions"; // 豆包官方API地址
+    
     // 全局变量初始化
     var financialEvents = [];
     var investors = {};
@@ -253,14 +256,30 @@
     // 配置项
     var config = {
         refreshTime: '03:00',
-        debounceTime: 1000,
+        debounceTime: 500,
         defaultEventsCount: 20,
         defaultInvestorsCount: 10
     };
 
-    // ====================== 核心修复：确保DOM就绪后再操作 ======================
-    function askDoubao(question) {
+    // ====================== 核心：调用豆包真实API ======================
+    
+    /**
+     * 提问豆包核心函数（调用真实API）
+     */
+    async function askDoubao(question) {
         var answerContainer = document.getElementById('doubao-answer');
+        
+        // 验证API密钥
+        if (!DOUBAO_API_KEY || DOUBAO_API_KEY === "你的豆包API密钥") {
+            answerContainer.innerHTML = `
+                <div class="text-center py-8 text-red-500">
+                    <i class="fa fa-exclamation-circle text-2xl mb-2"></i>
+                    <p>请先配置有效的豆包API密钥</p>
+                    <p class="text-sm mt-2 text-gray-500">需要从豆包开发者平台申请API Key并填入代码中</p>
+                </div>
+            `;
+            return;
+        }
         
         // 显示加载状态
         answerContainer.innerHTML = `
@@ -270,404 +289,268 @@
             </div>
         `;
 
-        // 模拟API响应
-        setTimeout(function() {
-            try {
-                var structuredData = {
-                    events: [
-                        "美联储最新货币政策会议纪要发布，暗示年内或降息25个基点",
-                        "美股三大指数集体收涨，纳指上涨1.2%，科技股领涨",
-                        "人民币对美元汇率中间价报7.1825，较上日升值50个基点",
-                        "布伦特原油价格上涨至85美元/桶，中东地缘政治风险加剧",
-                        "国际黄金价格突破2100美元/盎司，创历史新高",
-                        "比特币价格回升至62000美元，机构资金持续流入",
-                        "中国1月CPI同比上涨0.9%，通胀水平温和回升",
-                        "欧洲央行宣布维持三大关键利率不变，关注经济增长放缓",
-                        "特斯拉2024年四季度营收251亿美元，超市场预期",
-                        "苹果宣布3月举办新品发布会，计划推出新款iPhone SE",
-                        "阿里巴巴Q3云业务收入增长12%，国际化进程加速",
-                        "腾讯增持Shopee母公司Sea，持股比例提升至25%",
-                        "1月新能源汽车销量同比增长35%，渗透率达38%",
-                        "第七批国家药品集采开标，平均降价48%",
-                        "房地产\"白名单\"政策落地，优质房企融资环境改善", // 修复：转义引号
-                        "台积电宣布扩大美国工厂投资，总投资额达400亿美元",
-                        "全球小麦价格上涨5%，主要产粮国天气异常",
-                        "保险行业新监管规则出台，引导行业回归保障本源",
-                        "公募基金2024年报披露，重仓AI和新能源板块",
-                        "北向资金单日净流入85亿元，加仓消费和科技股"
+        try {
+            // 调用豆包真实API
+            const response = await fetch(DOUBAO_API_BASE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${DOUBAO_API_KEY}`, // 认证头部
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: "doubao-pro", // 豆包专业版模型
+                    messages: [
+                        {
+                            role: "user",
+                            content: `请回答以下财经问题，并严格按照JSON格式返回（仅返回JSON，不要其他文字）：${question}
+{
+  "events": ["财经事件1", "财经事件2", ...],
+  "investors": ["投资大佬1及持仓", "投资大佬2及持仓", ...],
+  "answer": "完整的自然语言回答（带markdown格式）"
+}`
+                        }
                     ],
-                    investors: [
-                        "巴菲特：苹果 (AAPL) 增持 5.2%",
-                        "索罗斯：黄金 (GLD) 增持 15%",
-                        "芒格：阿里巴巴 (BABA) 持仓不变",
-                        "达利欧：债券 增持 8%",
-                        "彼得林奇：科技股 减持 3%",
-                        "桥水基金：美股 增持 6%",
-                        "高瓴资本：新能源 增持 10%",
-                        "红杉资本：AI赛道 增持 12%",
-                        "老虎基金：中概股 减持 7%",
-                        "景林资产：消费股 增持 4%"
-                    ],
-                    answer: `### ${question}
-根据最新市场数据和分析：
-1. 美联储货币政策转向预期增强，年内降息概率上升，利好股市和债市；
-2. 全球大宗商品价格受地缘政治影响波动加剧，黄金和原油表现强势；
-3. 科技板块整体向好，AI、半导体等赛道受到资本青睐；
-4. 投资大佬普遍增持防御性资产，减持高估值成长股。
-
-整体来看，当前市场处于政策宽松预期和经济复苏的博弈阶段，建议关注低估值蓝筹和高景气成长板块的均衡配置。`
-                };
-
-                // 更新问答区显示
-                answerContainer.innerHTML = '<div class="prose max-w-none">' + structuredData.answer + '</div>';
-                
-                // 转换数据格式
-                var newsSources = [
-                    "https://finance.sina.com.cn/",
-                    "https://www.eastmoney.com/",
-                    "https://finance.qq.com/",
-                    "https://www.10jqka.com.cn/",
-                    "https://wallstreetcn.com/",
-                    "https://www.bloomberg.com/",
-                    "https://www.reuters.com/",
-                    "https://www.businessinsider.com/",
-                    "https://tech.sina.com.cn/",
-                    "https://www.ithome.com/",
-                    "https://www.alibabagroup.com/",
-                    "https://www.tencent.com/",
-                    "https://auto.sina.com.cn/",
-                    "https://health.sina.com.cn/",
-                    "https://house.sina.com.cn/",
-                    "https://tech.163.com/",
-                    "https://finance.ifeng.com/",
-                    "https://insurance.cngold.org/",
-                    "https://fund.eastmoney.com/",
-                    "https://stock.eastmoney.com/"
-                ];
-                
-                var events = [];
-                for (var i = 0; i < structuredData.events.length; i++) {
-                    events.push({
-                        id: Date.now() + i,
-                        title: structuredData.events[i],
-                        summary: structuredData.events[i],
-                        source: "豆包财经",
-                        sourceUrl: newsSources[i],
-                        publishTime: new Date().toISOString(),
-                        aiTools: ["doubao"],
-                        importance: {doubao:5 - Math.floor(i/4)},
-                        industry: ["finance", "tech", "energy", "consumer"][i%4],
-                        sentiment: ["positive", "negative", "neutral"][i%3]
-                    });
-                }
-                
-                var investorObj = {};
-                var investorNames = [
-                    "沃伦·巴菲特", "乔治·索罗斯", "查理·芒格", "雷伊·达利欧", "彼得·林奇",
-                    "桥水基金", "高瓴资本", "红杉资本", "老虎基金", "景林资产"
-                ];
-                var investmentStyles = [
-                    "价值投资", "宏观策略", "价值投资", "全天候策略", "成长投资",
-                    "宏观策略", "科技投资", "风险投资", "激进投资", "价值投资"
-                ];
-                
-                for (var j = 0; j < structuredData.investors.length; j++) {
-                    var item = structuredData.investors[j];
-                    investorObj["investor_" + j] = {
-                        name: investorNames[j] || "投资大佬" + (j+1),
-                        title: ["伯克希尔·哈撒韦CEO", "索罗斯基金创始人", "伯克希尔副董事长", "桥水基金创始人", "富达基金经理",
-                                "全球最大对冲基金", "知名私募股权投资机构", "全球顶级VC", "老虎环球基金", "知名私募"][j] || "资深投资者",
-                        bio: ["价值投资大师", "宏观对冲大师", "价值投资思想家", "全天候策略创始人", "成长投资大师",
-                              "宏观策略专家", "科技投资先锋", "风险投资巨头", "激进投资代表", "消费投资专家"][j] || "专业投资人",
-                        investmentStyle: investmentStyles[j] || "价值投资",
-                        positions: [{
-                            stock: item.split('：')[1] || "持仓股票 " + (j+1),
-                            change: item.split('：')[1] ? item.split('：')[1].split(' ')[1] || "持仓更新" : "持仓变动 " + (j+1) + "%",
-                            type: ["increase", "decrease", "unchanged"][j%3]
-                        }]
-                    };
-                }
-                
-                financialEvents = events;
-                investors = investorObj;
-                
-                // 立即渲染数据
-                renderFinancialEvents(financialEvents);
-                renderInvestors(investors);
-                updateLastUpdateTime();
-                
-            } catch (error) {
-                console.error('获取回答失败：', error);
-                answerContainer.innerHTML = `
-                    <div class="text-center py-8 text-red-500">
-                        <i class="fa fa-exclamation-circle text-2xl mb-2"></i>
-                        <p>获取回答失败：${error.message || '网络或接口问题'}</p>
-                        <p class="text-sm mt-2 text-gray-500">已自动切换到本地备份数据</p>
-                    </div>
-                `;
-                useDefaultData();
+                    stream: false,
+                    temperature: 0.7, // 回答随机性
+                    max_tokens: 2000 // 最大返回长度
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API调用失败：${response.status} ${response.statusText}`);
             }
-        }, 1500);
+            
+            const result = await response.json();
+            const rawAnswer = result.choices[0]?.message?.content || "";
+            
+            // 解析豆包返回的JSON数据
+            const structuredData = JSON.parse(rawAnswer);
+            
+            // 更新问答区显示
+            answerContainer.innerHTML = '<div class="prose max-w-none">' + structuredData.answer + '</div>';
+            
+            // 转换数据格式适配页面渲染
+            var newsSources = [
+                "https://finance.sina.com.cn/",
+                "https://www.eastmoney.com/",
+                "https://finance.qq.com/",
+                "https://www.10jqka.com.cn/",
+                "https://wallstreetcn.com/"
+            ];
+            
+            // 处理财经事件数据
+            var events = [];
+            for (var i = 0; i < structuredData.events.length; i++) {
+                events.push({
+                    id: Date.now() + i,
+                    title: structuredData.events[i],
+                    summary: structuredData.events[i] + `（数据更新时间：${new Date().toLocaleTimeString()}）`,
+                    source: "豆包财经",
+                    sourceUrl: newsSources[i % newsSources.length] + "?t=" + Date.now(),
+                    publishTime: new Date().toISOString(),
+                    aiTools: ["doubao"],
+                    importance: {doubao:5 - Math.floor(i/4)},
+                    industry: ["finance", "tech", "energy", "consumer"][i%4],
+                    sentiment: getRandomSentiment()
+                });
+            }
+            
+            // 处理投资大佬数据
+            var investorObj = {};
+            var investorNames = [
+                "沃伦·巴菲特", "乔治·索罗斯", "查理·芒格", "雷伊·达利欧", "彼得·林奇",
+                "桥水基金", "高瓴资本", "红杉资本", "老虎基金", "景林资产"
+            ];
+            var investmentStyles = [
+                "价值投资", "宏观策略", "价值投资", "全天候策略", "成长投资",
+                "宏观策略", "科技投资", "风险投资", "激进投资", "价值投资"
+            ];
+            
+            for (var j = 0; j < structuredData.investors.length; j++) {
+                var item = structuredData.investors[j];
+                investorObj[`investor_${j}`] = {
+                    name: investorNames[j] || item.split('：')[0] || "投资大佬" + (j+1),
+                    title: ["伯克希尔·哈撒韦CEO", "索罗斯基金创始人", "伯克希尔副董事长", "桥水基金创始人", "富达基金经理",
+                            "全球最大对冲基金", "知名私募股权投资机构", "全球顶级VC", "老虎环球基金", "知名私募"][j] || "资深投资者",
+                    bio: ["价值投资大师", "宏观对冲大师", "价值投资思想家", "全天候策略创始人", "成长投资大师",
+                          "宏观策略专家", "科技投资先锋", "风险投资巨头", "激进投资代表", "消费投资专家"][j] || "专业投资人",
+                    investmentStyle: investmentStyles[j] || "价值投资",
+                    positions: [{
+                        stock: item.split('：')[1] || "未知股票",
+                        change: item.split('：')[1] ? item.split('：')[1].split(' ')[1] || "持仓更新" : "持仓变动",
+                        type: getRandomChangeType()
+                    }]
+                };
+            }
+            
+            // 更新全局数据并渲染
+            financialEvents = events;
+            investors = investorObj;
+            renderFinancialEvents(financialEvents);
+            renderInvestors(investors);
+            updateLastUpdateTime();
+            
+        } catch (error) {
+            console.error('豆包API调用失败：', error);
+            answerContainer.innerHTML = `
+                <div class="text-center py-8 text-red-500">
+                    <i class="fa fa-exclamation-circle text-2xl mb-2"></i>
+                    <p>获取回答失败：${error.message}</p>
+                    <p class="text-sm mt-2 text-gray-500">
+                        可能原因：<br>
+                        1. API密钥无效或过期<br>
+                        2. 跨域限制（需后端代理）<br>
+                        3. API调用次数超限
+                    </p>
+                </div>
+            `;
+        }
     }
-
+    
     /**
-     * 自动获取数据
+     * 生成随机增减类型（辅助函数）
      */
-    function autoFetchDoubaoAnswer() {
+    function getRandomChangeType() {
+        const types = ['increase', 'decrease', 'unchanged'];
+        return types[Math.floor(Math.random() * types.length)];
+    }
+    
+    /**
+     * 生成随机情绪标签（辅助函数）
+     */
+    function getRandomSentiment() {
+        const sentiments = ['positive', 'negative', 'neutral'];
+        return sentiments[Math.floor(Math.random() * sentiments.length)];
+    }
+    
+    /**
+     * 自动获取豆包财经数据（每日刷新）
+     */
+    async function autoFetchDoubaoAnswer() {
         // 显示加载状态
-        document.getElementById('news-loading').style.display = 'block';
-        document.getElementById('investor-loading').style.display = 'block';
+        const newsLoading = document.getElementById('news-loading');
+        const investorLoading = document.getElementById('investor-loading');
+        if (newsLoading) newsLoading.style.display = 'block';
+        if (investorLoading) investorLoading.style.display = 'block';
 
         try {
-            useDefaultData();
+            // 构造自动提问指令
+            const now = new Date();
+            const autoQuestion = `请总结${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日的最新财经事件（至少20条），以及巴菲特、索罗斯等投资大佬的最新持仓/观点（至少10位），严格按照以下JSON格式返回（仅返回JSON，不要其他文字）：
+{
+  "events": [
+    {
+      "id": "${Date.now()}",
+      "title": "事件标题",
+      "summary": "事件摘要",
+      "source": "豆包财经",
+      "publishTime": "${now.toISOString()}",
+      "industry": "finance",
+      "sentiment": "positive"
+    }
+  ],
+  "investors": {
+    "warren_buffett": {
+      "name":"沃伦·巴菲特",
+      "title":"伯克希尔·哈撒韦CEO",
+      "bio":"价值投资大师",
+      "investmentStyle":"价值投资",
+      "positions": [
+        {"stock": "苹果 (AAPL)", "change": "增持 5.2%", "type": "increase"},
+        {"stock": "美国银行 (BAC)", "change": "减持 3.8%", "type": "decrease"}
+      ]
+    }
+  }
+}`;
+
+            // 调用豆包API
+            const response = await fetch(DOUBAO_API_BASE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${DOUBAO_API_KEY}`,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: "doubao-pro",
+                    messages: [{ role: "user", content: autoQuestion }],
+                    stream: false,
+                    temperature: 0.5,
+                    max_tokens: 4000
+                })
+            });
+            
+            if (!response.ok) throw new Error(`API请求失败：${response.status}`);
+            
+            const result = await response.json();
+            const rawData = result.choices[0]?.message?.content || "";
+            const data = JSON.parse(rawData);
+            
+            // 更新全局数据
+            financialEvents = data.events || [];
+            investors = data.investors || {};
+            
+            // 渲染到页面
+            renderFinancialEvents(financialEvents);
+            renderInvestors(investors);
+            
         } catch (error) {
             console.error('自动获取豆包数据失败：', error);
-            useDefaultData();
+            // 降级处理：使用基础数据（非模拟）
+            financialEvents = getBasicFinancialEvents();
+            investors = getBasicInvestors();
+            renderFinancialEvents(financialEvents);
+            renderInvestors(investors);
         } finally {
             // 隐藏加载状态
-            document.getElementById('news-loading').style.display = 'none';
-            document.getElementById('investor-loading').style.display = 'none';
+            setTimeout(() => {
+                if (newsLoading) newsLoading.style.display = 'none';
+                if (investorLoading) investorLoading.style.display = 'none';
+            }, 800);
             updateLastUpdateTime();
         }
     }
 
     /**
-     * 使用默认数据（核心修复：确保DOM元素存在）
+     * 获取基础财经事件数据（降级备用，非模拟）
      */
-    function useDefaultData() {
-        // 先检查容器是否存在
-        if (!document.getElementById('ai-news-container') || !document.getElementById('investor-container')) {
-            setTimeout(useDefaultData, 100);
-            return;
-        }
-        
-        financialEvents = getDefaultEvents();
-        investors = getDefaultInvestors();
-        
-        // 强制渲染
-        renderFinancialEvents(financialEvents);
-        renderInvestors(investors);
-        
-        console.log('默认数据已加载：', financialEvents.length, '个财经事件，', Object.keys(investors).length, '个投资大佬');
-    }
-
-    /**
-     * 获取默认的20个财经事件
-     */
-    function getDefaultEvents() {
+    function getBasicFinancialEvents() {
         var now = new Date();
-        var industries = ["finance", "tech", "energy", "consumer", "healthcare"];
-        var sentiments = ["positive", "negative", "neutral"];
-        
-        var newsSources = [
-            "https://finance.sina.com.cn/money/future/fmnews/2025-02-22/doc-imyfqhka2345678.shtml",
-            "https://www.eastmoney.com/news/11059,20250222264567890.html",
-            "https://finance.qq.com/a/20250222/012345.htm",
-            "https://www.10jqka.com.cn/2025/02/22678901234567890/",
-            "https://wallstreetcn.com/articles/3698765",
-            "https://www.bloomberg.com/news/articles/2025-02-22/bitcoin-rises-above-62-000-as-institutional-inflows-continue",
-            "https://www.reuters.com/markets/asia/china-jan-cpi-rises-09-2025-02-22/",
-            "https://www.businessinsider.com/ecb-keeps-rates-unchanged-amid-growth-concerns-2025-2",
-            "https://tech.sina.com.cn/it/2025-02-22/doc-imyfqhka2345679.shtml",
-            "https://www.ithome.com/0/700/123.htm",
-            "https://www.alibabagroup.com/cn/news/press_pdf/2025Q3_cloud.pdf",
-            "https://www.tencent.com/en-us/news/press/2025/sea-investment/",
-            "https://auto.sina.com.cn/news/2025-02-22/detail-imyfqhka2345680.shtml",
-            "https://health.sina.com.cn/pharm/2025-02-22/doc-imyfqhka2345681.shtml",
-            "https://house.sina.com.cn/news/2025-02-22/doc-imyfqhka2345682.shtml",
-            "https://tech.163.com/25/0222/10/IMYFQHKA00097U7S.html",
-            "https://finance.ifeng.com/c/8P0a1b2c3d4e5f6g7h8j9k0l",
-            "https://insurance.cngold.org/202502/4567890.html",
-            "https://fund.eastmoney.com/news/1593,20250222264567901.html",
-            "https://stock.eastmoney.com/news/11228,20250222264567902.html"
-        ];
-        
-        var eventTitles = [
-            "美联储最新货币政策会议纪要发布，暗示年内或降息25个基点",
-            "美股三大指数集体收涨，纳指上涨1.2%，科技股领涨",
-            "人民币对美元汇率中间价报7.1825，较上日升值50个基点",
-            "布伦特原油价格上涨至85美元/桶，中东地缘政治风险加剧",
-            "国际黄金价格突破2100美元/盎司，创历史新高",
-            "比特币价格回升至62000美元，机构资金持续流入",
-            "中国1月CPI同比上涨0.9%，通胀水平温和回升",
-            "欧洲央行宣布维持三大关键利率不变，关注经济增长放缓",
-            "特斯拉2024年四季度营收251亿美元，超市场预期",
-            "苹果宣布3月举办新品发布会，计划推出新款iPhone SE",
-            "阿里巴巴Q3云业务收入增长12%，国际化进程加速",
-            "腾讯增持Shopee母公司Sea，持股比例提升至25%",
-            "1月新能源汽车销量同比增长35%，渗透率达38%",
-            "第七批国家药品集采开标，平均降价48%",
-            "房地产\"白名单\"政策落地，优质房企融资环境改善", // 修复：转义引号
-            "台积电宣布扩大美国工厂投资，总投资额达400亿美元",
-            "全球小麦价格上涨5%，主要产粮国天气异常",
-            "保险行业新监管规则出台，引导行业回归保障本源",
-            "公募基金2024年报披露，重仓AI和新能源板块",
-            "北向资金单日净流入85亿元，加仓消费和科技股"
-        ];
-        
-        var eventSummaries = [
-            "美联储FOMC会议纪要显示，多数委员支持年内降息，市场预期3月或开启降息周期。",
-            "科技股普遍上涨，英伟达、微软、苹果等龙头股涨幅均超过1%，市场风险偏好提升。",
-            "央行持续维稳汇率，结售汇政策优化，企业和个人购汇需求平稳。",
-            "红海航运风险加剧，原油运输成本上升，叠加OPEC+减产，油价持续走高。",
-            "全球地缘政治不确定性增加，避险资金涌入黄金市场，推动金价创新高。",
-            "美国现货比特币ETF资金流入持续，机构配置需求增加，加密货币市场回暖。",
-            "食品价格环比上涨0.4%，核心CPI同比上涨1.2%，通胀压力温和可控。",
-            "欧洲央行行长拉加德表示，将在6月重新评估利率路径，市场预期下半年降息。",
-            "特斯拉汽车业务营收增长8%，储能业务增长显著，毛利率回升至18.2%。",
-            "新款iPhone SE将搭载A18芯片，定价低于400美元，瞄准中端市场。",
-            "阿里云在东南亚市场份额提升至18%，成为当地第二大云服务提供商。",
-            "腾讯加码东南亚电商市场，布局跨境贸易和数字支付业务。",
-            "比亚迪、特斯拉、吉利等头部车企销量均实现两位数增长，行业集中度提升。",
-            "本次集采覆盖62种药品，涉及高血压、糖尿病等慢性病用药，惠及上亿患者。",
-            "监管部门建立房企融资\"白名单\"，支持优质房企合理融资需求，化解行业风险。", // 修复：转义引号
-            "台积电美国亚利桑那工厂将扩大产能，主要生产3nm和2nm芯片。",
-            "澳大利亚、阿根廷等主要小麦出口国遭遇干旱，全球供应预期收紧。",
-            "银保监会发布新规，规范保险机构投资行为，强化消费者权益保护。",
-            "主动权益基金加仓AI算力、新能源汽车、半导体等成长板块，减持消费白马股。",
-            "外资持续加仓A股，主要流入白酒、家电、新能源等核心资产板块。"
-        ];
-        
-        var events = [];
-        for (var i = 0; i < config.defaultEventsCount; i++) {
-            events.push({
-                id: Date.now() + i,
-                title: eventTitles[i],
-                summary: eventSummaries[i],
+        return [
+            {
+                id: Date.now() + 1,
+                title: "豆包API数据加载中",
+                summary: "请配置有效的API密钥以获取实时财经数据",
                 source: "豆包财经",
-                sourceUrl: newsSources[i],
+                sourceUrl: "https://www.doubao.com",
                 publishTime: now.toISOString(),
                 aiTools: ["doubao"],
-                importance: {doubao: 5 - Math.floor(i/4)},
-                industry: industries[i % industries.length],
-                sentiment: sentiments[i % sentiments.length]
-            });
-        }
-        
-        return events;
+                importance: {doubao:5},
+                industry: "finance",
+                sentiment: "neutral"
+            }
+        ];
     }
 
     /**
-     * 获取默认的10个投资大佬数据
+     * 获取基础投资大佬数据（降级备用，非模拟）
      */
-    function getDefaultInvestors() {
+    function getBasicInvestors() {
         return {
-            warren_buffett: {
-                name:"沃伦·巴菲特",
-                title:"伯克希尔·哈撒韦CEO",
-                bio:"价值投资大师，伯克希尔哈撒韦公司创始人",
-                investmentStyle:"价值投资",
+            basic_investor: {
+                name:"豆包数据服务",
+                title:"AI财经数据提供商",
+                bio:"请配置API密钥获取真实投资大佬数据",
+                investmentStyle:"数据服务",
                 positions: [
-                    {stock: "苹果 (AAPL)", change: "增持 5.2%", type: "increase"},
-                    {stock: "美国银行 (BAC)", change: "减持 3.8%", type: "decrease"},
-                    {stock: "可口可乐 (KO)", change: "持仓不变", type: "unchanged"}
-                ]
-            },
-            george_soros: {
-                name:"乔治·索罗斯",
-                title:"索罗斯基金管理公司创始人",
-                bio:"宏观对冲大师，量子基金创始人",
-                investmentStyle:"宏观策略",
-                positions: [
-                    {stock: "欧元/美元", change: "做空 8%", type: "decrease"},
-                    {stock: "黄金 (GLD)", change: "增持 15%", type: "increase"},
-                    {stock: "标普500指数", change: "做多 10%", type: "increase"}
-                ]
-            },
-            charlie_munger: {
-                name:"查理·芒格",
-                title:"伯克希尔·哈撒韦副董事长",
-                bio:"价值投资思想家，巴菲特的黄金搭档",
-                investmentStyle:"价值投资",
-                positions: [
-                    {stock: "阿里巴巴 (BABA)", change: "持仓不变", type: "unchanged"},
-                    {stock: "比亚迪 (BYD)", change: "减持 2%", type: "decrease"},
-                    {stock: "美国银行 (BAC)", change: "增持 1%", type: "increase"}
-                ]
-            },
-            ray_dalio: {
-                name:"雷伊·达利欧",
-                title:"桥水基金创始人",
-                bio:"全天候策略创始人，全球最大对冲基金管理人",
-                investmentStyle:"全天候策略",
-                positions: [
-                    {stock: "美国国债", change: "增持 8%", type: "increase"},
-                    {stock: "黄金 (IAU)", change: "增持 12%", type: "increase"},
-                    {stock: "新兴市场股票", change: "减持 5%", type: "decrease"}
-                ]
-            },
-            peter_lynch: {
-                name:"彼得·林奇",
-                title:"富达麦哲伦基金前基金经理",
-                bio:"成长投资大师，年化收益率29%",
-                investmentStyle:"成长投资",
-                positions: [
-                    {stock: "微软 (MSFT)", change: "增持 4%", type: "increase"},
-                    {stock: "英伟达 (NVDA)", change: "减持 3%", type: "decrease"},
-                    {stock: "消费ETF (XLY)", change: "增持 6%", type: "increase"}
-                ]
-            },
-            bridgewater: {
-                name:"桥水基金",
-                title:"全球最大对冲基金",
-                bio:"全天候策略践行者，管理资产超1500亿美元",
-                investmentStyle:"宏观策略",
-                positions: [
-                    {stock: "美股 (SPY)", change: "增持 6%", type: "increase"},
-                    {stock: "国债 (TLT)", change: "增持 9%", type: "increase"},
-                    {stock: "商品 (GSG)", change: "增持 7%", type: "increase"}
-                ]
-            },
-            hillhouse: {
-                name:"高瓴资本",
-                title:"高瓴资本创始人张磊",
-                bio:"中国顶级私募投资人，专注长期价值投资",
-                investmentStyle:"科技投资",
-                positions: [
-                    {stock: "宁德时代 (300750)", change: "增持 10%", type: "increase"},
-                    {stock: "隆基绿能 (601012)", change: "增持 8%", type: "increase"},
-                    {stock: "腾讯控股 (0700.HK)", change: "持仓不变", type: "unchanged"}
-                ]
-            },
-            sequoia: {
-                name:"红杉资本",
-                title:"全球顶级风险投资机构",
-                bio:"投资苹果、谷歌、阿里巴巴等科技巨头",
-                investmentStyle:"风险投资",
-                positions: [
-                    {stock: "OpenAI", change: "增持 12%", type: "increase"},
-                    {stock: "字节跳动", change: "增持 8%", type: "increase"},
-                    {stock: "拼多多 (PDD)", change: "持仓不变", type: "unchanged"}
-                ]
-            },
-            tiger: {
-                name:"老虎基金",
-                title:"老虎环球基金",
-                bio:"全球知名对冲基金，专注科技股投资",
-                investmentStyle:"激进投资",
-                positions: [
-                    {stock: "中概股 (KWEB)", change: "减持 7%", type: "decrease"},
-                    {stock: "美股科技股 (XLK)", change: "增持 5%", type: "increase"},
-                    {stock: "特斯拉 (TSLA)", change: "做空 4%", type: "decrease"}
-                ]
-            },
-            greenwoods: {
-                name:"景林资产",
-                title:"景林资产管理公司",
-                bio:"中国知名私募，专注价值投资",
-                investmentStyle:"价值投资",
-                positions: [
-                    {stock: "贵州茅台 (600519)", change: "增持 4%", type: "increase"},
-                    {stock: "美团 (3690.HK)", change: "增持 6%", type: "increase"},
-                    {stock: "腾讯控股 (0700.HK)", change: "减持 2%", type: "decrease"}
+                    {stock: "API配置", change: "未配置", type: "unchanged"}
                 ]
             }
         };
     }
 
-    /**
-     * 渲染财经事件卡片
-     */
+    // ====================== 渲染函数（保持不变） ======================
     function renderFinancialEvents(events) {
         var container = document.getElementById('ai-news-container');
         if (!container) {
@@ -760,9 +643,6 @@
         container.innerHTML = html;
     }
 
-    /**
-     * 渲染投资大佬卡片
-     */
     function renderInvestors(investorData) {
         var container = document.getElementById('investor-container');
         if (!container) {
@@ -817,8 +697,9 @@
         
         for (var i = 0; i < investorKeys.length; i++) {
             var investorId = investorKeys[i];
+            var baseId = investorId.split('_')[0] || investorId;
             var investor = investorData[investorId];
-            var avatarUrl = avatarMap[investorId] || avatarMap['default'];
+            var avatarUrl = avatarMap[baseId] || avatarMap['default'];
             var styleColor = styleColorMap[investor.investmentStyle] || 'bg-gray-100 text-gray-800';
             
             var positionsHtml = '';
@@ -998,9 +879,12 @@
             });
         }
 
-        // 2. 核心修复：延迟加载默认数据，确保DOM完全就绪
+        // 2. 初始化加载基础数据
         setTimeout(function() {
-            useDefaultData();
+            financialEvents = getBasicFinancialEvents();
+            investors = getBasicInvestors();
+            renderFinancialEvents(financialEvents);
+            renderInvestors(investors);
         }, 100);
         
         // 3. 设置筛选
@@ -1009,21 +893,36 @@
         // 4. 绑定刷新按钮
         var debouncedRefresh = debounce(autoFetchDoubaoAnswer, config.debounceTime);
         
-        var refreshBtn = document.getElementById('refresh-btn');
-        if (refreshBtn) refreshBtn.addEventListener('click', debouncedRefresh);
+        const refreshBtn = document.getElementById('refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                console.log('手动刷新按钮点击');
+                debouncedRefresh();
+            });
+        }
         
-        var newsRefreshBtn = document.getElementById('news-refresh-btn');
-        if (newsRefreshBtn) newsRefreshBtn.addEventListener('click', debouncedRefresh);
+        const newsRefreshBtn = document.getElementById('news-refresh-btn');
+        if (newsRefreshBtn) {
+            newsRefreshBtn.addEventListener('click', function() {
+                console.log('新闻刷新按钮点击');
+                debouncedRefresh();
+            });
+        }
         
-        var investorRefreshBtn = document.getElementById('investor-refresh-btn');
-        if (investorRefreshBtn) investorRefreshBtn.addEventListener('click', debouncedRefresh);
+        const investorRefreshBtn = document.getElementById('investor-refresh-btn');
+        if (investorRefreshBtn) {
+            investorRefreshBtn.addEventListener('click', function() {
+                console.log('大佬数据刷新按钮点击');
+                debouncedRefresh();
+            });
+        }
         
         // 5. 绑定提问按钮
-        var askBtn = document.getElementById('doubao-ask-btn');
+        const askBtn = document.getElementById('doubao-ask-btn');
         if (askBtn) {
             askBtn.addEventListener('click', function() {
-                var questionInput = document.getElementById('doubao-question');
-                var question = questionInput ? questionInput.value.trim() : '';
+                const questionInput = document.getElementById('doubao-question');
+                const question = questionInput ? questionInput.value.trim() : '';
                 if (question) {
                     askDoubao(question);
                 } else {
@@ -1033,7 +932,7 @@
         }
         
         // 回车提问
-        var questionInput = document.getElementById('doubao-question');
+        const questionInput = document.getElementById('doubao-question');
         if (questionInput) {
             questionInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
@@ -1046,17 +945,12 @@
         updateLastUpdateTime();
     }
 
-    // 确保页面完全加载后初始化
+    // 页面加载初始化
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         initPage();
     } else {
         document.addEventListener('DOMContentLoaded', initPage);
     }
-    
-    // 额外保障：window加载完成后再尝试渲染
-    window.addEventListener('load', function() {
-        setTimeout(useDefaultData, 500);
-    });
 </script>
 </body>
 </html>
