@@ -1,516 +1,79 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>豆包财经助手</title>
-    <!-- Tailwind CSS（生产环境兼容版，消除警告） -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio" data-turbo-track="reload"></script>
-    <!-- Font Awesome 图标 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        // Tailwind 配置
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                        secondary: '#64748b',
-                        success: '#10b981',
-                        danger: '#ef4444',
-                        neutral: '#f3f4f6'
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .prose-custom {
-                @apply prose max-w-none prose-slate;
-            }
-            .card-shadow {
-                @apply shadow-md hover:shadow-lg transition-shadow duration-300;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日财经要闻</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- 顶部导航 -->
-    <header class="bg-white shadow-sm sticky top-0 z-10">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-primary flex items-center">
-                <i class="fas fa-chart-line mr-2"></i>
-                豆包财经助手
-            </h1>
-            <div class="flex items-center space-x-4">
-                <span id="last-update-time" class="text-sm text-gray-500">
-                    最后更新：--
-                </span>
-                <button id="refresh-btn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors flex items-center">
-                    <i class="fas fa-sync-alt mr-2"></i>
-                    手动刷新
-                </button>
-            </div>
-        </div>
-    </header>
+<body class="bg-gray-50">
 
-    <!-- 主内容区 -->
-    <main class="container mx-auto px-4 py-8">
-        <!-- 提问区域 -->
-        <section class="bg-white rounded-xl p-6 mb-8 card-shadow">
-            <h2 class="text-xl font-semibold mb-4 flex items-center">
-                <i class="fas fa-question-circle mr-2 text-primary"></i>
-                向豆包提问
-            </h2>
-            <div class="flex flex-col md:flex-row gap-4">
-                <input 
-                    type="text" 
-                    id="question-input" 
-                    placeholder="例如：2025年2月23日财经新闻总结" 
-                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    value="2025年2月23日财经新闻总结"
-                >
-                <button id="ask-btn" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center">
-                    <i class="fas fa-paper-plane mr-2"></i>
-                    发送提问
-                </button>
-            </div>
-        </section>
+<header class="bg-white shadow py-4 px-6">
+  <div class="max-w-5xl mx-auto flex justify-between items-center">
+    <h1 class="text-xl font-bold text-gray-800">📈 每日实时财经要闻</h1>
+    <button id="refresh" class="text-blue-600 text-sm">
+      <i class="fa fa-refresh"></i> 刷新
+    </button>
+  </div>
+</header>
 
-        <!-- 豆包回答区域 -->
-        <section class="bg-white rounded-xl p-6 mb-8 card-shadow">
-            <h2 class="text-xl font-semibold mb-4 flex items-center">
-                <i class="fas fa-comment-dots mr-2 text-primary"></i>
-                豆包回答
-            </h2>
-            <div id="doubao-answer" class="prose-custom min-h-[100px]">
-                <div class="text-center py-8">
-                    <i class="fa fa-spinner fa-spin text-primary text-2xl mb-2"></i>
-                    <p class="text-gray-600">豆包正在加载回答...</p>
-                </div>
-            </div>
-        </section>
+<div class="max-w-5xl mx-auto py-6 px-6">
+  <div id="status" class="text-sm text-gray-500 mb-3">加载中...</div>
+  <div id="news-list" class="space-y-4"></div>
+</div>
 
-        <!-- 财经事件区域 -->
-        <section class="bg-white rounded-xl p-6 mb-8 card-shadow">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold flex items-center">
-                    <i class="fas fa-newspaper mr-2 text-primary"></i>
-                    最新财经事件
-                </h2>
-                <div id="news-loading" class="text-primary flex items-center" style="display: none;">
-                    <i class="fa fa-spinner fa-spin mr-2"></i>
-                    加载中...
-                </div>
-            </div>
-            <div id="financial-events-container" class="space-y-4">
-                <!-- 财经事件内容将通过 JS 渲染 -->
-            </div>
-        </section>
+<script>
+const API = "https://doubao-api-proxy.jliu0721.workers.dev";
 
-        <!-- 投资大佬区域 -->
-        <section class="bg-white rounded-xl p-6 card-shadow">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold flex items-center">
-                    <i class="fas fa-user-tie mr-2 text-primary"></i>
-                    投资大佬持仓
-                </h2>
-                <button id="investor-refresh-btn" class="text-primary hover:text-primary/80 flex items-center">
-                    <i class="fa fa-sync-alt mr-1"></i>
-                    刷新数据
-                </button>
-                <div id="investor-loading" class="text-primary flex items-center" style="display: none;">
-                    <i class="fa fa-spinner fa-spin mr-2"></i>
-                    加载中...
-                </div>
-            </div>
-            <div id="investors-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- 投资大佬内容将通过 JS 渲染 -->
-            </div>
-        </section>
-    </main>
+function getToday() {
+  const now = new Date();
+  return now.toLocaleDateString('zh-CN');
+}
 
-    <!-- 页脚 -->
-    <footer class="bg-gray-800 text-white py-6 mt-12">
-        <div class="container mx-auto px-4 text-center">
-            <p>豆包财经助手 © 2025 | 数据来源：豆包官方 API</p>
-        </div>
-    </footer>
+async function loadTodayNews() {
+  const today = getToday();
+  document.getElementById("status").innerText = "正在获取 " + today + " 实时财经新闻…";
+  document.getElementById("news-list").innerHTML = `<div class="py-10 text-center text-gray-400"><i class="fa fa-spinner fa-spin"></i></div>`;
 
-    <script>
-        // 1. 全局配置
-        const DOUBAO_API_BASE_URL = "https://doubao-api-proxy.jliu0721.workers.dev";
-        let financialEvents = [];
-        let investors = {};
+  try {
+    const prompt = `
+请【实时联网搜索】${today} 最新财经要闻，
+按照重要程度排序，输出5-8条，
+每条包含：
+1. 标题
+2. 一句话摘要
+3. 影响（简短）
+4. 新闻出处链接
+格式清晰，适合新闻网站展示。`;
 
-        // 2. 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            // 初始化数据
-            autoFetchDoubaoAnswer();
-            
-            // 绑定事件监听
-            document.getElementById('ask-btn').addEventListener('click', function() {
-                const question = document.getElementById('question-input').value.trim();
-                if (question) {
-                    askDoubao(question);
-                } else {
-                    alert('请输入提问内容');
-                }
-            });
+    const r = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: prompt })
+    });
 
-            document.getElementById('refresh-btn').addEventListener('click', function() {
-                console.log('手动刷新按钮点击');
-                autoFetchDoubaoAnswer();
-            });
+    const data = await r.json();
+    document.getElementById("status").innerText = `${today} 实时财经要闻（已按重要度排序）`;
 
-            document.getElementById('investor-refresh-btn').addEventListener('click', function() {
-                console.log('大佬数据刷新按钮点击');
-                autoFetchDoubaoAnswer();
-            });
+    const html = data.answer.split("\n").filter(line => line.trim()).map(line => `
+      <div class="bg-white p-4 rounded-lg shadow">
+        ${line.replace(/^-/g, "•").replace(/##/g, "").replace(/###/g, "")}
+      </div>
+    `).join("");
 
-            // 回车提交提问
-            document.getElementById('question-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    document.getElementById('ask-btn').click();
-                }
-            });
-        });
+    document.getElementById("news-list").innerHTML = html;
 
-        // 3. 向豆包提问核心函数
-        async function askDoubao(question) {
-            var answerContainer = document.getElementById('doubao-answer');
-            
-            // 显示加载状态
-            answerContainer.innerHTML = `
-                <div class="text-center py-8">
-                    <i class="fa fa-spinner fa-spin text-primary text-2xl mb-2"></i>
-                    <p class="text-gray-600">豆包正在思考你的问题...</p>
-                </div>
-            `;
+  } catch (e) {
+    document.getElementById("news-list").innerHTML = `<div class="text-red-500">加载失败</div>`;
+    console.error(e);
+  }
+}
 
-            try {
-                // 调用 Worker（适配豆包新 API 格式）
-                const response = await fetch(DOUBAO_API_BASE_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        question: question // 简化参数，Worker 内部转换为豆包要求的格式
-                    })
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `请求失败：${response.status}`);
-                }
-                
-                const result = await response.json();
-                const answer = result.answer || "未获取到有效回答";
-                
-                // 显示回答
-                answerContainer.innerHTML = `<div class="prose max-w-none">${answer}</div>`;
-                
-                // 生成财经事件和大佬数据
-                const now = new Date();
-                financialEvents = [{
-                    id: Date.now(),
-                    title: "豆包AI财经回答",
-                    summary: answer,
-                    source: "豆包官方API",
-                    publishTime: now.toISOString(),
-                    industry: "finance",
-                    sentiment: "neutral"
-                }];
-                
-                investors = {
-                    ai_data: {
-                        name: "豆包财经AI",
-                        title: "智能财经助手",
-                        bio: "基于官方API提供实时财经数据",
-                        investmentStyle: "AI分析",
-                        positions: [{ stock: "数据更新", change: "完成", type: "unchanged" }]
-                    }
-                };
-                
-                // 渲染数据到页面
-                renderFinancialEvents(financialEvents);
-                renderInvestors(investors);
-                updateLastUpdateTime();
-                
-            } catch (error) {
-                console.error('豆包API调用失败：', error);
-                answerContainer.innerHTML = `
-                    <div class="text-center py-8 text-red-500">
-                        <i class="fa fa-exclamation-circle text-2xl mb-2"></i>
-                        <p>获取回答失败：${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        // 4. 自动获取财经数据函数
-        async function autoFetchDoubaoAnswer() {
-            const newsLoading = document.getElementById('news-loading');
-            const investorLoading = document.getElementById('investor-loading');
-            
-            // 显示加载状态
-            if (newsLoading) newsLoading.style.display = 'flex';
-            if (investorLoading) investorLoading.style.display = 'flex';
-
-            try {
-                // 自动提问：总结当日财经新闻
-                const now = new Date();
-                const autoQuestion = `请总结${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日的最新财经事件（至少5条）和投资大佬的最新持仓信息（至少3位），用简洁的中文回答，每条信息分行显示。`;
-
-                // 调用 Worker
-                const response = await fetch(DOUBAO_API_BASE_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        question: autoQuestion
-                    })
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `请求失败：${response.status}`);
-                }
-                
-                const result = await response.json();
-                const answer = result.answer || "暂无数据";
-                
-                // 构造财经事件数据
-                financialEvents = [{
-                    id: Date.now(),
-                    title: `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日财经汇总`,
-                    summary: answer,
-                    source: "豆包官方API",
-                    publishTime: now.toISOString(),
-                    industry: "finance",
-                    sentiment: "neutral"
-                }];
-                
-                // 构造投资大佬数据（默认示例）
-                investors = {
-                    buffett: {
-                        name: "沃伦·巴菲特",
-                        title: "伯克希尔·哈撒韦CEO",
-                        bio: "价值投资大师，长期持有消费、金融类核心资产",
-                        investmentStyle: "价值投资",
-                        positions: [
-                            {stock: "苹果 (AAPL)", change: "持仓不变", type: "unchanged"},
-                            {stock: "可口可乐 (KO)", change: "小幅增持 1.2%", type: "increase"},
-                            {stock: "美国银行 (BAC)", change: "减持 0.8%", type: "decrease"}
-                        ]
-                    },
-                    soros: {
-                        name: "乔治·索罗斯",
-                        title: "索罗斯基金管理公司创始人",
-                        bio: "宏观对冲策略大师，擅长捕捉全球市场趋势",
-                        investmentStyle: "宏观对冲",
-                        positions: [
-                            {stock: "黄金ETF (GLD)", change: "增持 5%", type: "increase"},
-                            {stock: "欧元/美元", change: "做空", type: "decrease"},
-                            {stock: "科技股", change: "持仓不变", type: "unchanged"}
-                        ]
-                    },
-                    simmons: {
-                        name: "詹姆斯·西蒙斯",
-                        title: "文艺复兴科技创始人",
-                        bio: "量化投资先驱，依靠数学模型进行高频交易",
-                        investmentStyle: "量化交易",
-                        positions: [
-                            {stock: "半导体ETF", change: "增持 3%", type: "increase"},
-                            {stock: "国债期货", change: "对冲持仓", type: "unchanged"},
-                            {stock: "能源股", change: "减持 2%", type: "decrease"}
-                        ]
-                    }
-                };
-
-                // 渲染数据
-                renderFinancialEvents(financialEvents);
-                renderInvestors(investors);
-                
-            } catch (error) {
-                console.error('自动获取豆包数据失败：', error);
-                // 降级处理：使用基础数据
-                financialEvents = getBasicFinancialEvents();
-                investors = getBasicInvestors();
-                renderFinancialEvents(financialEvents);
-                renderInvestors(investors);
-            } finally {
-                // 隐藏加载状态
-                setTimeout(() => {
-                    if (newsLoading) newsLoading.style.display = 'none';
-                    if (investorLoading) investorLoading.style.display = 'none';
-                }, 800);
-                updateLastUpdateTime();
-            }
-        }
-
-        // 5. 渲染财经事件
-        function renderFinancialEvents(events) {
-            const container = document.getElementById('financial-events-container');
-            if (!container) return;
-            
-            if (events.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-6 text-gray-500">
-                        <i class="fa fa-info-circle text-xl mb-2"></i>
-                        <p>暂无财经事件数据</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = '';
-            events.forEach(event => {
-                // 格式化时间
-                const publishTime = new Date(event.publishTime);
-                const formattedTime = publishTime.toLocaleString('zh-CN');
-                
-                // 情感标签样式
-                let sentimentClass = 'bg-gray-100 text-gray-800';
-                if (event.sentiment === 'positive') sentimentClass = 'bg-green-100 text-green-800';
-                if (event.sentiment === 'negative') sentimentClass = 'bg-red-100 text-red-800';
-                
-                html += `
-                    <div class="border border-gray-200 rounded-lg p-4 hover:border-primary/30 transition-colors">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="font-semibold text-lg text-gray-800">${event.title}</h3>
-                            <span class="px-2 py-1 text-xs rounded-full ${sentimentClass}">
-                                ${event.industry || '财经'}
-                            </span>
-                        </div>
-                        <p class="text-gray-600 mb-3">${event.summary}</p>
-                        <div class="flex justify-between text-sm text-gray-500">
-                            <span><i class="fa fa-clock-o mr-1"></i> ${formattedTime}</span>
-                            <span><i class="fa fa-source mr-1"></i> ${event.source}</span>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            container.innerHTML = html;
-        }
-
-        // 6. 渲染投资大佬数据
-        function renderInvestors(investorsData) {
-            const container = document.getElementById('investors-container');
-            if (!container) return;
-            
-            const investorKeys = Object.keys(investorsData);
-            if (investorKeys.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full text-center py-6 text-gray-500">
-                        <i class="fa fa-user-tie text-xl mb-2"></i>
-                        <p>暂无投资大佬数据</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = '';
-            investorKeys.forEach(key => {
-                const investor = investorsData[key];
-                
-                // 渲染持仓信息
-                let positionsHtml = '';
-                investor.positions.forEach(pos => {
-                    let changeIcon = 'fa-minus';
-                    let changeClass = 'text-gray-600';
-                    
-                    if (pos.type === 'increase') {
-                        changeIcon = 'fa-plus';
-                        changeClass = 'text-green-600';
-                    } else if (pos.type === 'decrease') {
-                        changeIcon = 'fa-minus';
-                        changeClass = 'text-red-600';
-                    }
-                    
-                    positionsHtml += `
-                        <div class="flex justify-between items-center py-1 border-b border-gray-100">
-                            <span class="font-medium">${pos.stock}</span>
-                            <span class="${changeClass} flex items-center">
-                                <i class="fa ${changeIcon} mr-1"></i> ${pos.change}
-                            </span>
-                        </div>
-                    `;
-                });
-                
-                html += `
-                    <div class="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow">
-                        <div class="mb-3">
-                            <h3 class="text-lg font-bold text-gray-800">${investor.name}</h3>
-                            <p class="text-sm text-gray-500">${investor.title}</p>
-                        </div>
-                        <p class="text-gray-600 text-sm mb-4">${investor.bio}</p>
-                        <div class="mb-3">
-                            <span class="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
-                                ${investor.investmentStyle}
-                            </span>
-                        </div>
-                        <div class="mt-4">
-                            <h4 class="font-semibold text-sm text-gray-700 mb-2">最新持仓</h4>
-                            <div class="text-sm">
-                                ${positionsHtml || '<p class="text-gray-500">暂无持仓数据</p>'}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            container.innerHTML = html;
-        }
-
-        // 7. 更新最后更新时间
-        function updateLastUpdateTime() {
-            const now = new Date();
-            const formattedTime = now.toLocaleString('zh-CN');
-            const timeElement = document.getElementById('last-update-time');
-            if (timeElement) {
-                timeElement.textContent = `最后更新：${formattedTime}`;
-            }
-        }
-
-        // 8. 基础降级数据（API 失败时使用）
-        function getBasicFinancialEvents() {
-            const now = new Date();
-            return [{
-                id: Date.now(),
-                title: "基础财经数据",
-                summary: "1. 上证指数报3250点，上涨0.5%；2. 人民币汇率小幅升值；3. 央行维持货币政策稳定；4. 新能源板块领涨；5. 消费数据环比改善。",
-                source: "基础数据源",
-                publishTime: now.toISOString(),
-                industry: "finance",
-                sentiment: "neutral"
-            }];
-        }
-
-        function getBasicInvestors() {
-            return {
-                buffett: {
-                    name: "沃伦·巴菲特",
-                    title: "伯克希尔·哈撒韦CEO",
-                    bio: "价值投资大师，专注于长期持有优质企业",
-                    investmentStyle: "价值投资",
-                    positions: [
-                        {stock: "苹果 (AAPL)", change: "持仓不变", type: "unchanged"},
-                        {stock: "可口可乐", change: "持仓不变", type: "unchanged"}
-                    ]
-                }
-            };
-        }
-    </script>
+document.addEventListener("DOMContentLoaded", () => {
+  loadTodayNews();
+  document.getElementById("refresh").onclick = loadTodayNews;
+});
+</script>
 </body>
 </html>
