@@ -68,7 +68,7 @@
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center">
                     <i class="fas fa-newspaper mr-2 text-primary"></i>
-                    近24小时重要财经科技事件（Top20）
+                    近24小时重要财经科技事件（Top5）
                 </h2>
                 <button id="refresh-news" class="text-primary hover:text-primary/80 flex items-center text-sm">
                     <i class="fas fa-refresh mr-1"></i>
@@ -147,7 +147,7 @@
                     </div>
                     <div id="answer-error" class="text-red-500 hidden">
                         <i class="fas fa-exclamation-circle mr-1"></i>
-                        获取回答失败，请稍后重试
+                        <p>获取回答失败，请稍后重试</p>
                     </div>
                 </div>
             </div>
@@ -188,13 +188,15 @@
 
         // 工具函数：显示错误状态
         function showError(errorId, message) {
-            document.getElementById(errorId).classList.remove('hidden');
-            if (message) {
-                document.getElementById(errorId).querySelector('p').textContent = message;
+            const errorEl = document.getElementById(errorId);
+            errorEl.classList.remove('hidden');
+            const errorP = errorEl.querySelector('p');
+            if (errorP && message) {
+                errorP.textContent = message;
             }
         }
 
-       // 1. 获取财经新闻事件
+        // 1. 获取财经新闻事件（Top5，45秒超时，重试机制）
         async function fetchNews() {
             showLoading('news-container', 'news-loading', 'news-error');
             
@@ -204,13 +206,15 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ type: 'news' })
+                    body: JSON.stringify({ type: 'news' }),
+                    signal: AbortSignal.timeout(45000) // 前端超时45秒
                 });
-        
+
                 if (!response.ok) {
-                    throw new Error(`HTTP错误：${response.status}`);
+                    const errData = await response.json().catch(() => ({ error: '服务器响应错误' }));
+                    throw new Error(errData.error || `HTTP错误：${response.status}`);
                 }
-        
+
                 const result = await response.json();
                 if (result.success) {
                     const newsList = result.data || [];
@@ -222,7 +226,7 @@
                         return;
                     }
                     
-                    // 渲染新闻列表
+                    // 渲染新闻列表（Top5）
                     container.innerHTML = newsList.map((news, index) => `
                         <div class="news-item bg-white p-4 rounded-lg card-shadow">
                             <div class="flex items-start">
@@ -248,13 +252,17 @@
                 }
             } catch (error) {
                 console.error('获取新闻失败:', error);
-                showError('news-error', '加载财经事件失败，请稍后重试');
+                // 超时友好提示
+                const errorMsg = error.message.includes('超时') 
+                    ? '豆包API响应超时（联网搜索较慢），请点击刷新重试' 
+                    : '加载财经事件失败，请稍后重试';
+                showError('news-error', errorMsg);
             } finally {
                 document.getElementById('news-loading').classList.add('hidden');
             }
         }
-        
-        // 2. 获取投资大佬持仓
+
+        // 2. 获取投资大佬持仓（3位核心大佬，45秒超时，重试机制）
         async function fetchInvestors() {
             showLoading('investors-container', 'investors-loading', 'investors-error');
             
@@ -264,13 +272,15 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ type: 'investors' })
+                    body: JSON.stringify({ type: 'investors' }),
+                    signal: AbortSignal.timeout(45000) // 前端超时45秒
                 });
-        
+
                 if (!response.ok) {
-                    throw new Error(`HTTP错误：${response.status}`);
+                    const errData = await response.json().catch(() => ({ error: '服务器响应错误' }));
+                    throw new Error(errData.error || `HTTP错误：${response.status}`);
                 }
-        
+
                 const result = await response.json();
                 if (result.success) {
                     const investorList = result.data || [];
@@ -305,49 +315,55 @@
                 }
             } catch (error) {
                 console.error('获取持仓失败:', error);
-                showError('investors-error', '加载持仓信息失败，请稍后重试');
+                const errorMsg = error.message.includes('超时') 
+                    ? '豆包API响应超时，请点击刷新重试' 
+                    : '加载持仓信息失败，请稍后重试';
+                showError('investors-error', errorMsg);
             } finally {
                 document.getElementById('investors-loading').classList.add('hidden');
             }
         }
 
-       
-
-        // 3. 提交AI提问
+        // 3. 提交AI提问（容错处理，避免空指针）
         async function submitQuestion() {
             const question = document.getElementById('question-input').value.trim();
             if (!question) {
                 alert('请输入提问内容');
                 return;
             }
-        
+
             const answerContainer = document.getElementById('answer-container');
             const answerLoading = document.getElementById('answer-loading');
             const answerContent = document.getElementById('answer-content');
             const answerError = document.getElementById('answer-error');
-        
+
             // 显示加载状态
             answerContainer.classList.remove('hidden');
             answerLoading.classList.remove('hidden');
             answerContent.classList.add('hidden');
             answerError.classList.add('hidden');
-        
+
             try {
                 const response = await fetch(API_BASE_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ type: 'ask', question: question })
+                    body: JSON.stringify({ type: 'ask', question: question }),
+                    signal: AbortSignal.timeout(45000)
                 });
-        
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({ error: '服务器响应错误' }));
+                    throw new Error(errData.error || `HTTP错误：${response.status}`);
+                }
+
                 const result = await response.json();
                 if (result.success) {
                     answerContent.innerHTML = `<div class="prose max-w-none">${result.answer || '暂无分析结果'}</div>`;
                     answerContent.classList.remove('hidden');
                 } else {
                     answerError.classList.remove('hidden');
-                    // 修复：容错处理DOM元素
                     const errorP = answerError.querySelector('p');
                     if (errorP) {
                         errorP.textContent = result.error || '获取回答失败，请稍后重试';
@@ -358,18 +374,26 @@
                 answerError.classList.remove('hidden');
                 const errorP = answerError.querySelector('p');
                 if (errorP) {
-                    errorP.textContent = '网络错误，请稍后重试';
+                    errorP.textContent = error.message.includes('超时') ? '豆包AI分析超时，请稍后重试' : '获取回答失败，请稍后重试';
                 }
             } finally {
                 answerLoading.classList.add('hidden');
             }
         }
-        
 
-        // 4. 初始化页面
+        // 4. 初始化页面（串行加载，先新闻再持仓，避免同时请求超时）
         async function initPage() {
-            // 同时加载新闻和大佬持仓
-            await Promise.all([fetchNews(), fetchInvestors()]);
+            // 先加载新闻，失败则重试1次
+            await fetchNews().catch(err => {
+                console.error('新闻首次加载失败，重试1次:', err);
+                return fetchNews();
+            });
+            
+            // 再加载持仓，失败则重试1次
+            await fetchInvestors().catch(err => {
+                console.error('持仓首次加载失败，重试1次:', err);
+                return fetchInvestors();
+            });
             
             // 设置12小时自动刷新新闻
             newsRefreshTimer = setInterval(() => {
@@ -384,7 +408,8 @@
 
             // 刷新全部
             document.getElementById('refresh-all').addEventListener('click', () => {
-                Promise.all([fetchNews(), fetchInvestors()]);
+                // 串行刷新，避免同时请求
+                fetchNews().then(() => fetchInvestors());
             });
 
             // 刷新新闻
@@ -396,9 +421,10 @@
             // 提交提问
             document.getElementById('submit-question').addEventListener('click', submitQuestion);
 
-            // 回车提交提问
+            // 回车提交提问（阻止默认换行）
             document.getElementById('question-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // 阻止textarea换行
                     submitQuestion();
                 }
             });
