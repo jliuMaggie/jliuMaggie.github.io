@@ -3,76 +3,202 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>每日财经要闻</title>
+<title>每日实时财经要闻</title>
+<!-- 消除 Tailwind 生产环境警告 -->
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  .news-item {
+    border-left: 4px solid #3b82f6;
+    transition: all 0.2s ease;
+  }
+  .news-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+  .source-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+</style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 min-h-screen">
 
-<header class="bg-white shadow py-4 px-6">
-  <div class="max-w-5xl mx-auto flex justify-between items-center">
-    <h1 class="text-xl font-bold text-gray-800">📈 每日实时财经要闻</h1>
-    <button id="refresh" class="text-blue-600 text-sm">
-      <i class="fa fa-refresh"></i> 刷新
-    </button>
+<!-- 顶部导航 -->
+<header class="bg-white shadow-sm sticky top-0 z-10">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+    <h1 class="text-2xl font-bold text-primary flex items-center mb-2 md:mb-0">
+      <i class="fas fa-chart-line mr-2"></i>
+      每日实时财经要闻
+    </h1>
+    <div class="flex items-center space-x-3">
+      <span id="date-tag" class="text-sm text-gray-500"></span>
+      <button id="refresh-btn" class="bg-primary/90 text-white px-3 py-1 rounded-lg hover:bg-primary transition-colors flex items-center text-sm">
+        <i class="fas fa-sync-alt mr-1"></i>
+        刷新新闻
+      </button>
+    </div>
   </div>
 </header>
 
-<div class="max-w-5xl mx-auto py-6 px-6">
-  <div id="status" class="text-sm text-gray-500 mb-3">加载中...</div>
-  <div id="news-list" class="space-y-4"></div>
-</div>
+<!-- 主内容区 -->
+<main class="max-w-6xl mx-auto px-4 py-8">
+  <!-- 加载状态 -->
+  <div id="loading" class="text-center py-10">
+    <i class="fa fa-spinner fa-spin text-primary text-2xl mb-3"></i>
+    <p class="text-gray-600">正在获取最新财经新闻...</p>
+  </div>
+  
+  <!-- 新闻列表 -->
+  <div id="news-container" class="space-y-4 hidden"></div>
+  
+  <!-- 空状态 -->
+  <div id="empty-state" class="text-center py-10 hidden">
+    <i class="fa fa-newspaper-o text-gray-300 text-4xl mb-3"></i>
+    <p class="text-gray-500">暂无最新财经新闻</p>
+  </div>
+  
+  <!-- 错误状态 -->
+  <div id="error-state" class="text-center py-10 hidden">
+    <i class="fa fa-exclamation-circle text-red-500 text-4xl mb-3"></i>
+    <p class="text-red-500" id="error-message">加载新闻失败</p>
+  </div>
+</main>
+
+<!-- 页脚 -->
+<footer class="bg-gray-800 text-white py-4 mt-auto">
+  <div class="max-w-6xl mx-auto px-4 text-center text-sm">
+    <p>数据来源：豆包实时联网搜索（财联社/新浪财经/第一财经）</p>
+  </div>
+</footer>
 
 <script>
-const API = "https://doubao-api-proxy.jliu0721.workers.dev";
+const API_URL = "https://doubao-api-proxy.jliu0721.workers.dev";
+let todayDate = "";
 
-function getToday() {
+// 格式化今日日期
+function formatTodayDate() {
   const now = new Date();
-  return now.toLocaleDateString('zh-CN');
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  todayDate = `${year}年${month}月${day}日`;
+  document.getElementById("date-tag").textContent = todayDate;
+  return todayDate;
 }
 
+// 加载今日财经新闻
 async function loadTodayNews() {
-  const today = getToday();
-  document.getElementById("status").innerText = "正在获取 " + today + " 实时财经新闻…";
-  document.getElementById("news-list").innerHTML = `<div class="py-10 text-center text-gray-400"><i class="fa fa-spinner fa-spin"></i></div>`;
+  // 显示加载状态
+  document.getElementById("loading").classList.remove("hidden");
+  document.getElementById("news-container").classList.add("hidden");
+  document.getElementById("empty-state").classList.add("hidden");
+  document.getElementById("error-state").classList.add("hidden");
 
   try {
-    const prompt = `
-请【实时联网搜索】${today} 最新财经要闻，
-按照重要程度排序，输出5-8条，
-每条包含：
-1. 标题
-2. 一句话摘要
-3. 影响（简短）
-4. 新闻出处链接
-格式清晰，适合新闻网站展示。`;
+    const today = formatTodayDate();
+    // 构造精准的提问指令
+    const question = `搜索${today}最新的财经要闻，优先选择财联社、新浪财经、第一财经的权威内容`;
 
-    const r = await fetch(API, {
+    // 调用 Worker API
+    const response = await fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: prompt })
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ question: question })
     });
 
-    const data = await r.json();
-    document.getElementById("status").innerText = `${today} 实时财经要闻（已按重要度排序）`;
+    if (!response.ok) {
+      throw new Error(`请求失败：${response.status}`);
+    }
 
-    const html = data.answer.split("\n").filter(line => line.trim()).map(line => `
-      <div class="bg-white p-4 rounded-lg shadow">
-        ${line.replace(/^-/g, "•").replace(/##/g, "").replace(/###/g, "")}
-      </div>
-    `).join("");
+    const result = await response.json();
+    
+    if (result.success) {
+      const answer = result.answer || "暂无最新财经新闻";
+      
+      // 判断是否有有效新闻
+      if (answer.includes("暂无") || answer.trim() === "") {
+        document.getElementById("empty-state").classList.remove("hidden");
+      } else {
+        // 渲染新闻列表（适配豆包返回的格式）
+        renderNewsList(answer);
+        document.getElementById("news-container").classList.remove("hidden");
+      }
+    } else {
+      throw new Error(result.error || "获取新闻失败");
+    }
 
-    document.getElementById("news-list").innerHTML = html;
-
-  } catch (e) {
-    document.getElementById("news-list").innerHTML = `<div class="text-red-500">加载失败</div>`;
-    console.error(e);
+  } catch (error) {
+    console.error("加载新闻失败：", error);
+    document.getElementById("error-message").textContent = `加载失败：${error.message}`;
+    document.getElementById("error-state").classList.remove("hidden");
+  } finally {
+    document.getElementById("loading").classList.add("hidden");
   }
 }
 
+// 渲染新闻列表
+function renderNewsList(content) {
+  const container = document.getElementById("news-container");
+  // 分割新闻条目（适配豆包的分点格式）
+  const newsItems = content.split(/\n\d+\.|^\d+\.|^-|^\*|^●/).filter(item => item.trim() !== "");
+  
+  let html = "";
+  newsItems.forEach((item, index) => {
+    if (item.trim() === "") return;
+    
+    // 提取来源（如果有）
+    let source = "";
+    let newsText = item.trim();
+    if (newsText.includes("【来源】")) {
+      const sourceMatch = newsText.match(/【来源】(.+?)(：| |$)/);
+      if (sourceMatch) {
+        source = sourceMatch[1];
+        newsText = newsText.replace(/【来源】.+?(\：| |$)/, "");
+      }
+    }
+    
+    // 生成新闻条目 HTML
+    html += `
+      <div class="news-item bg-white p-5 rounded-lg shadow">
+        <div class="flex items-start justify-between mb-2">
+          <span class="text-sm font-medium text-primary">${index + 1}</span>
+          ${source ? `<span class="source-tag bg-primary/10 text-primary">${source}</span>` : ""}
+        </div>
+        <p class="text-gray-800">${newsText}</p>
+      </div>
+    `;
+  });
+  
+  // 如果没有分割出条目，直接显示原始内容
+  if (html === "") {
+    html = `
+      <div class="bg-white p-5 rounded-lg shadow">
+        <p class="text-gray-800 whitespace-pre-line">${content}</p>
+      </div>
+    `;
+  }
+  
+  container.innerHTML = html;
+}
+
+// 页面初始化
 document.addEventListener("DOMContentLoaded", () => {
+  formatTodayDate();
   loadTodayNews();
-  document.getElementById("refresh").onclick = loadTodayNews;
+  
+  // 绑定刷新按钮事件
+  document.getElementById("refresh-btn").addEventListener("click", loadTodayNews);
+  
+  // 回车刷新（可选）
+  document.addEventListener("keypress", (e) => {
+    if (e.key === "F5" || (e.ctrlKey && e.key === "r")) {
+      loadTodayNews();
+    }
+  });
 });
 </script>
 </body>
