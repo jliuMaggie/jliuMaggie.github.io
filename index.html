@@ -100,16 +100,22 @@ async function loadTodayNews() {
     const today = formatTodayDate();
     // 构造精准的提问指令
     const question = `搜索${today}最新的财经要闻，优先选择财联社、新浪财经、第一财经的权威内容`;
+    const requestBody = JSON.stringify({ 
+      question: question.trim() || "搜索最新的金融新闻" 
+    });
 
     // 调用 Worker API
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json", // 必须指定
+        "Accept": "application/json"
       },
-      body: JSON.stringify({ question: question })
+      body: requestBody,
+      cache: "no-cache", // 禁用缓存
+      credentials: "omit"
     });
-
+    
     if (!response.ok) {
       throw new Error(`请求失败：${response.status}`);
     }
