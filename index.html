@@ -194,7 +194,7 @@
             }
         }
 
-        // 1. 获取财经新闻事件
+       // 1. 获取财经新闻事件
         async function fetchNews() {
             showLoading('news-container', 'news-loading', 'news-error');
             
@@ -206,11 +206,21 @@
                     },
                     body: JSON.stringify({ type: 'news' })
                 });
-
+        
+                if (!response.ok) {
+                    throw new Error(`HTTP错误：${response.status}`);
+                }
+        
                 const result = await response.json();
                 if (result.success) {
-                    const newsList = result.data;
+                    const newsList = result.data || [];
                     const container = document.getElementById('news-container');
+                    
+                    // 空数据处理
+                    if (newsList.length === 0) {
+                        showError('news-error', '暂无近24小时财经科技事件');
+                        return;
+                    }
                     
                     // 渲染新闻列表
                     container.innerHTML = newsList.map((news, index) => `
@@ -234,7 +244,7 @@
                     
                     container.classList.remove('hidden');
                 } else {
-                    showError('news-error', result.error);
+                    showError('news-error', result.error || '加载财经事件失败');
                 }
             } catch (error) {
                 console.error('获取新闻失败:', error);
@@ -243,7 +253,7 @@
                 document.getElementById('news-loading').classList.add('hidden');
             }
         }
-
+        
         // 2. 获取投资大佬持仓
         async function fetchInvestors() {
             showLoading('investors-container', 'investors-loading', 'investors-error');
@@ -256,11 +266,21 @@
                     },
                     body: JSON.stringify({ type: 'investors' })
                 });
-
+        
+                if (!response.ok) {
+                    throw new Error(`HTTP错误：${response.status}`);
+                }
+        
                 const result = await response.json();
                 if (result.success) {
-                    const investorList = result.data;
+                    const investorList = result.data || [];
                     const container = document.getElementById('investors-container');
+                    
+                    // 空数据处理
+                    if (investorList.length === 0) {
+                        showError('investors-error', '暂无投资大佬持仓变动信息');
+                        return;
+                    }
                     
                     // 渲染大佬持仓
                     container.innerHTML = investorList.map(item => `
@@ -281,7 +301,7 @@
                     
                     container.classList.remove('hidden');
                 } else {
-                    showError('investors-error', result.error);
+                    showError('investors-error', result.error || '加载持仓信息失败');
                 }
             } catch (error) {
                 console.error('获取持仓失败:', error);
@@ -291,6 +311,8 @@
             }
         }
 
+       
+
         // 3. 提交AI提问
         async function submitQuestion() {
             const question = document.getElementById('question-input').value.trim();
@@ -298,18 +320,18 @@
                 alert('请输入提问内容');
                 return;
             }
-
+        
             const answerContainer = document.getElementById('answer-container');
             const answerLoading = document.getElementById('answer-loading');
             const answerContent = document.getElementById('answer-content');
             const answerError = document.getElementById('answer-error');
-
+        
             // 显示加载状态
             answerContainer.classList.remove('hidden');
             answerLoading.classList.remove('hidden');
             answerContent.classList.add('hidden');
             answerError.classList.add('hidden');
-
+        
             try {
                 const response = await fetch(API_BASE_URL, {
                     method: 'POST',
@@ -318,22 +340,31 @@
                     },
                     body: JSON.stringify({ type: 'ask', question: question })
                 });
-
+        
                 const result = await response.json();
                 if (result.success) {
-                    answerContent.innerHTML = `<div class="prose max-w-none">${result.answer}</div>`;
+                    answerContent.innerHTML = `<div class="prose max-w-none">${result.answer || '暂无分析结果'}</div>`;
                     answerContent.classList.remove('hidden');
                 } else {
                     answerError.classList.remove('hidden');
-                    answerError.querySelector('p').textContent = result.error;
+                    // 修复：容错处理DOM元素
+                    const errorP = answerError.querySelector('p');
+                    if (errorP) {
+                        errorP.textContent = result.error || '获取回答失败，请稍后重试';
+                    }
                 }
             } catch (error) {
                 console.error('提问失败:', error);
                 answerError.classList.remove('hidden');
+                const errorP = answerError.querySelector('p');
+                if (errorP) {
+                    errorP.textContent = '网络错误，请稍后重试';
+                }
             } finally {
                 answerLoading.classList.add('hidden');
             }
         }
+        
 
         // 4. 初始化页面
         async function initPage() {
